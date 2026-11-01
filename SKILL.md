@@ -1,6 +1,6 @@
 ---
 name: pr-review
-description: Turn the current branch or PR into an interactive review guide: changes grouped into feature chapters, ranked by risk, checked against an AI-code checklist, opened as a browser view. On later runs, shows only what changed since the last review. Use when the user asks to review a PR, review a branch, review changes before merging, re-review, or runs /pr-review. Also use when the user pastes a block starting with <!-- pr-review-comments -->.
+description: Turn the current branch or PR into an interactive review guide, with changes grouped into feature chapters, ranked by risk, checked against an AI-code checklist, opened as a browser view. On later runs, shows only what changed since the last review. Use when the user asks to review a PR, review a branch, review changes before merging, re-review, or runs /pr-review. Also use when the user pastes a block starting with <!-- pr-review-comments -->.
 ---
 
 # PR Review
@@ -110,7 +110,7 @@ The goal is to show the reviewer only what changed since they last looked, and t
 
 ## Addressing review comments
 
-The view's **Export for Claude** button copies a block that starts with `<!-- pr-review-comments -->`: the reviewer's comments, then a `<!-- pr-review-state … -->` block recording which version of each file they reviewed. When the user pastes it:
+The view's **Export for AI** button copies a block that starts with `<!-- pr-review-comments -->`: the reviewer's comments, then a `<!-- pr-review-state … -->` block recording which version of each file they reviewed. When the user pastes it:
 
 1. **Save the state first, before changing any code.** Copy the JSON between `<!-- pr-review-state` and `-->` exactly into `.pr-review/last-review.json`, replacing any earlier one. It records the versions the reviewer saw, so it must be saved as is.
 2. Treat each comment as a review request on its file and line. Lines are the file's line numbers at the time of the review (`side: "old"` means a deleted line).

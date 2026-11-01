@@ -240,7 +240,7 @@ function openFile(path) {
 
 // ---------- collecting the changes ----------
 // Default: everything on this branch since it left the base, INCLUDING
-// uncommitted and untracked changes. Fixes Claude makes but hasn't committed
+// uncommitted and untracked changes. Fixes the agent makes but hasn't committed
 // still show up in the re-review.
 function collect(args) {
   if (args.workingTree) {

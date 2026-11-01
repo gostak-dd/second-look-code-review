@@ -516,8 +516,8 @@ renderAll(); } },
         : h("button", { class: "linkbtn", onclick: showReceipt }, "· Summary")),
     h("button", { class: "btn" + (state.focus ? " primary" : ""), title: "Focus on one chapter (f)", onclick: toggleFocus }, "Focus"),
     h("button", { class: "btn", onclick: toggleAll }, files.filter((f) => isVisible(f.path)).every((f) => state.open[f.path]) ? "Collapse all" : "Expand all"),
-    h("button", { class: "btn primary", onclick: exportComments, title: "Copy your comments and what you've reviewed, to paste into Claude Code (e)" },
-      `Export for Claude${state.comments.length ? ` (${state.comments.length})` : ""}`),
+    h("button", { class: "btn primary", onclick: exportComments, title: "Copy your comments and what you've reviewed, to paste into your coding agent (e)" },
+      `Export for AI${state.comments.length ? ` (${state.comments.length})` : ""}`),
     h("button", { class: "btn", title: "Keyboard shortcuts (?)", onclick: showHelp, "aria-label": "Keyboard shortcuts" }, "?"),
   ].filter(Boolean));
   renderFocusBar();
@@ -738,7 +738,7 @@ function renderFinding(x) {
       h("span", { class: "chk" }, x.check),
       h("span", { class: "spacer" }),
       added ? h("span", {}, "✓ In your comments")
-        : h("button", { class: "btn small", title: "Add this finding to the comments you export to Claude",
+        : h("button", { class: "btn small", title: "Add this finding to the comments you export to your agent",
             onclick: () => {
               const key = "n" + x.line;
               state.comments.push({ id: "c" + Date.now(), file: x.file, key, findingId: x.id,
@@ -827,8 +827,8 @@ function reveal(path, line, targetId) {
 }
 
 // ---------- export ----------
-// Copies a markdown block for Claude: your comments, plus a machine-readable
-// record of exactly which version of each file you reviewed. Claude saves that
+// Copies a markdown block for the coding agent: your comments, plus a machine-readable
+// record of exactly which version of each file you reviewed. The agent saves that
 // record so the next /pr-review only shows what changed since.
 function exportComments() {
   const order = new Map(guide.chapters.flatMap((ch) => ch.files).map((p, i) => [p, i])); // reading order
@@ -873,8 +873,8 @@ function exportComments() {
 
   const md = lines.join("\n");
   const done = () => toast(sorted.length
-    ? `Copied ${sorted.length} comment${sorted.length === 1 ? "" : "s"}. Paste into Claude Code`
-    : "Copied your review state. Paste into Claude Code");
+    ? `Copied ${sorted.length} comment${sorted.length === 1 ? "" : "s"}. Paste into your coding agent`
+    : "Copied your review state. Paste into your coding agent");
   if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(md).then(done, () => fallbackCopy(md, done));
   else fallbackCopy(md, done);
 }
@@ -1136,19 +1136,19 @@ function showReceipt() {
         h("div", {}, h("b", {}, s.files), h("span", {}, `files in ${s.chapters} chapter${s.chapters === 1 ? "" : "s"}`)),
         h("div", {}, h("b", {}, h("span", { style: "color:var(--add)" }, "+" + s.adds), " ", h("span", { style: "color:var(--del)" }, "−" + s.dels)), h("span", {}, "lines read")),
         h("div", {}, h("b", {}, took), h("span", {}, `estimated ${fmtMin(s.est)}`)),
-        h("div", {}, h("b", {}, s.comments), h("span", {}, s.caught ? `comments · ${s.caught} from findings` : "comments for Claude"))),
+        h("div", {}, h("b", {}, s.comments), h("span", {}, s.caught ? `comments · ${s.caught} from findings` : "comments for your agent"))),
       h("p", { class: "sub", style: "margin-top:-6px" }, "Findings: " + findingsLine),
       h("div", { class: "row" },
         h("button", { class: "btn", onclick: () => copyText(text, "Copied summary") }, "Copy summary"),
         h("button", { class: "btn", onclick: closeModal }, "Close"),
         h("button", { class: "btn primary", onclick: () => { exportComments(); closeModal(); } },
-          s.comments ? `Send ${s.comments} comment${s.comments === 1 ? "" : "s"} to Claude` : "Export review state"))));
+          s.comments ? `Send ${s.comments} comment${s.comments === 1 ? "" : "s"} to your agent` : "Export review state"))));
 }
 
 function showHelp() {
   const keys = [["j / k", "Next / previous file"], ["o or Enter", "Open or close the file"], ["x", "Mark reviewed and open the next one"],
     ["click a line, then c", "Comment on that line"], ["n / N", "Next / previous finding"], ["t", "Walk me through this chapter"],
-    ["f", "Focus on one chapter"], ["e", "Export for Claude"], ["Esc", "Close"]];
+    ["f", "Focus on one chapter"], ["e", "Export for AI"], ["Esc", "Close"]];
   modal(h("h3", {}, "Keyboard shortcuts"), h("p", { class: "sub" }, "Review without touching the mouse."),
     h("div", { class: "keys" }, keys.flatMap(([k, d]) => [h("kbd", {}, k), h("span", {}, d)])),
     h("div", { class: "row" }, h("button", { class: "btn", onclick: closeModal }, "Close")));
