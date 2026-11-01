@@ -1,0 +1,1292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__REVIEW_TITLE__ · Review</title>
+<style>
+:root {
+  --bg: #101113;
+  --panel: #18191c;
+  --panel-2: #1e1f23;
+  --border: #2a2c31;
+  --border-strong: #383a40;
+  --text: #e8e8ea;
+  --muted: #8c8f97;
+  --faint: #5d6068;
+  --accent: #7c80f5;
+  --accent-ink: #ffffff;
+  --add: #46c46a;
+  --add-bg: rgba(70, 196, 106, 0.12);
+  --add-gutter: rgba(70, 196, 106, 0.2);
+  --del: #f0645a;
+  --del-bg: rgba(240, 100, 90, 0.12);
+  --del-gutter: rgba(240, 100, 90, 0.2);
+  --hunk-bg: rgba(124, 128, 245, 0.08);
+  --blocker: #f0645a;
+  --blocker-bg: rgba(240, 100, 90, 0.1);
+  --warn: #e3a33b;
+  --warn-bg: rgba(227, 163, 59, 0.1);
+  --nit: #8c8f97;
+  --nit-bg: rgba(140, 143, 151, 0.1);
+  --comment-bg: rgba(124, 128, 245, 0.1);
+  --flash: rgba(124, 128, 245, 0.35);
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  --sans: Inter, ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f7f7f8; --panel: #ffffff; --panel-2: #f2f2f4; --border: #e3e3e7; --border-strong: #d0d0d6;
+    --text: #1b1c1f; --muted: #6a6d75; --faint: #a2a5ad; --accent: #5e62e8;
+    --add: #1f8a3e; --add-bg: rgba(31, 138, 62, 0.09); --add-gutter: rgba(31, 138, 62, 0.16);
+    --del: #c93a30; --del-bg: rgba(201, 58, 48, 0.08); --del-gutter: rgba(201, 58, 48, 0.15);
+    --hunk-bg: rgba(94, 98, 232, 0.06);
+    --blocker: #c93a30; --blocker-bg: rgba(201, 58, 48, 0.07);
+    --warn: #a86a08; --warn-bg: rgba(200, 130, 10, 0.09);
+    --nit: #6a6d75; --nit-bg: rgba(106, 109, 117, 0.08);
+    --comment-bg: rgba(94, 98, 232, 0.07); --flash: rgba(94, 98, 232, 0.25);
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.55 var(--sans); }
+button { font: inherit; color: inherit; }
+a { color: inherit; }
+code { font-family: var(--mono); font-size: 0.88em; background: var(--panel-2); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; }
+
+/* ---------- header ---------- */
+.top { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 92%, transparent); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); }
+.top-inner { max-width: 1600px; margin: 0 auto; padding: 14px 28px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.top-inner > div:first-child { flex: 1 1 200px; min-width: 0; }
+.top h1 { font-size: 16px; font-weight: 600; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.top .refs { color: var(--muted); font: 12px var(--mono); }
+.spacer { flex: 1; }
+.progress { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; white-space: nowrap; }
+.bar { width: 90px; height: 6px; border-radius: 3px; background: var(--panel-2); overflow: hidden; border: 1px solid var(--border); }
+.bar > i { display: block; height: 100%; background: var(--accent); transition: width .2s; }
+.chips { display: flex; gap: 6px; }
+.chip { border: 1px solid var(--border); background: var(--panel); border-radius: 999px; padding: 3px 10px; font-size: 12.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
+.chip:hover { border-color: var(--border-strong); color: var(--text); }
+.chip[disabled] { opacity: .45; cursor: default; }
+.dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; flex: none; }
+.dot.blocker, .dot.high { background: var(--blocker); }
+.dot.warn, .dot.medium { background: var(--warn); }
+.dot.nit, .dot.low { background: var(--nit); }
+.btn { border: 1px solid var(--border-strong); background: var(--panel); border-radius: 7px; padding: 6px 12px; font-size: 13px; cursor: pointer; }
+.btn:hover { background: var(--panel-2); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 500; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.small { padding: 3px 9px; font-size: 12px; }
+
+/* ---------- intro ---------- */
+main { max-width: 1600px; margin: 0 auto; padding: 28px 28px 120px; }
+.intro { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; margin-bottom: 36px; }
+.intent { border: 1px solid var(--border); background: var(--panel); border-radius: 10px; padding: 16px 18px; }
+.intent .label { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 4px; }
+.intent p { margin: 0; font-size: 17px; }
+.intent.unclear { border-color: var(--warn); background: var(--warn-bg); }
+.intent .note { margin-top: 8px; color: var(--warn); font-size: 14px; }
+.warnings { border: 1px dashed var(--border-strong); border-radius: 10px; padding: 10px 16px; color: var(--muted); font-size: 13px; }
+.warnings summary { cursor: pointer; }
+.warnings ul { margin: 8px 0 0; padding-left: 18px; }
+.toc { display: flex; flex-wrap: wrap; gap: 8px; }
+.toc a { text-decoration: none; border: 1px solid var(--border); background: var(--panel); border-radius: 8px; padding: 6px 12px; font-size: 13.5px; display: inline-flex; gap: 8px; align-items: center; }
+.toc a:hover { border-color: var(--border-strong); }
+.toc .num { color: var(--muted); font: 12px var(--mono); }
+.toc .count { color: var(--faint); font-size: 12px; }
+.toc a.done { color: var(--muted); }
+.toc a.done .title { text-decoration: line-through; text-decoration-color: var(--faint); }
+
+/* ---------- chapters ---------- */
+.chapter { display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 28px; padding: 32px 0 48px; border-top: 1px solid var(--border); scroll-margin-top: 70px; }
+.chapter-meta { position: sticky; top: 84px; align-self: start; max-height: calc(100vh - 100px); overflow: auto; padding-right: 4px; }
+.chapter h2 { font-size: 24px; font-weight: 600; margin: 0 0 6px; letter-spacing: -.01em; }
+.chapter.unassigned h2 { color: var(--warn); }
+.meta-row { display: flex; align-items: center; gap: 14px; color: var(--muted); font-size: 14px; margin-bottom: 14px; }
+.meta-row .num b { color: var(--text); font-weight: 500; }
+.risk { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; border-radius: 6px; padding: 4px 10px; margin-bottom: 14px; }
+.risk.high { background: var(--blocker-bg); color: var(--blocker); }
+.risk.medium { background: var(--warn-bg); color: var(--warn); }
+.risk.low { background: var(--nit-bg); color: var(--muted); }
+.risk b { font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: .06em; }
+.summary { font-size: 16.5px; line-height: 1.6; margin: 0 0 22px; }
+.ref { text-decoration: underline dotted; text-decoration-color: var(--muted); text-underline-offset: 4px; cursor: pointer; }
+.ref:hover { text-decoration-color: var(--accent); color: var(--accent); }
+.mini { display: flex; flex-direction: column; gap: 6px; }
+.mini button { all: unset; cursor: pointer; display: flex; align-items: center; gap: 10px; border: 1px solid var(--border); background: var(--panel); border-radius: 8px; padding: 8px 12px; font-size: 13.5px; min-width: 0; }
+.mini button:hover { border-color: var(--border-strong); }
+.mini .name { font-weight: 500; white-space: nowrap; }
+.mini .dir { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+.mini .tick { color: var(--faint); width: 14px; text-align: center; }
+.mini .reviewed .tick { color: var(--accent); }
+
+/* ---------- checkbox ---------- */
+.check { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; color: var(--muted); font-size: 14px; }
+.check input { appearance: none; width: 17px; height: 17px; border-radius: 4px; border: 1.5px solid var(--border-strong); background: var(--panel); margin: 0; cursor: pointer; display: grid; place-content: center; }
+.check input:checked { background: var(--accent); border-color: var(--accent); }
+.check input:checked::after { content: ""; width: 9px; height: 5px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(-45deg) translate(1px, -1px); }
+.check input:indeterminate { border-color: var(--accent); }
+.check input:indeterminate::after { content: ""; width: 8px; height: 2px; background: var(--accent); }
+
+/* ---------- file cards ---------- */
+.files { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.card { border: 1px solid var(--border); background: var(--panel); border-radius: 10px; overflow: clip; scroll-margin-top: 80px; }
+.card.reviewed { opacity: .72; }
+.card.reviewed:hover { opacity: 1; }
+.card-head { display: flex; align-items: center; gap: 12px; padding: 12px 16px; cursor: pointer; min-width: 0; }
+.card-head:hover { background: var(--panel-2); }
+.card.open .card-head { border-bottom: 1px solid var(--border); position: sticky; top: 63px; background: var(--panel); z-index: 5; }
+.ext { font: 600 9px var(--mono); color: var(--muted); border: 1px solid var(--border-strong); border-radius: 3px; padding: 1px 3px; min-width: 24px; text-align: center; flex: none; }
+.card-head .name { font-weight: 500; white-space: nowrap; }
+.card-head .dir { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1; font-size: 14px; }
+.tag { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; flex: none; }
+.fbadge { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--muted); flex: none; }
+.stat { font: 13px var(--mono); flex: none; white-space: nowrap; }
+.stat .a { color: var(--add); } .stat .d { color: var(--del); margin-left: 6px; }
+.chev { color: var(--faint); transition: transform .15s; flex: none; width: 14px; text-align: center; }
+.card.open .chev { transform: rotate(90deg); }
+.card-body { overflow-x: auto; }
+.note-row { padding: 12px 16px; color: var(--muted); font-size: 13.5px; }
+
+table.diff { border-collapse: collapse; width: 100%; font: 12.5px/1.6 var(--mono); }
+table.diff td { padding: 0; vertical-align: top; }
+.diff .g { width: 1%; min-width: 44px; padding: 0 8px; text-align: right; color: var(--faint); user-select: none; white-space: nowrap; }
+.diff .c { width: 22px; text-align: center; }
+.diff .code { white-space: pre; padding-right: 20px; }
+.diff .sign { display: inline-block; width: 16px; color: var(--faint); user-select: none; }
+.diff tr.add .code { background: var(--add-bg); } .diff tr.add .g { background: var(--add-gutter); color: var(--add); } .diff tr.add .sign { color: var(--add); }
+.diff tr.del .code { background: var(--del-bg); } .diff tr.del .g { background: var(--del-gutter); color: var(--del); } .diff tr.del .sign { color: var(--del); }
+.diff tr.hunk td { background: var(--hunk-bg); color: var(--muted); padding: 4px 8px; font-size: 12px; }
+.diff tr.flash td { background: var(--flash) !important; transition: background 1.2s; }
+.addc { all: unset; cursor: pointer; width: 18px; height: 18px; border-radius: 4px; background: var(--accent); color: #fff; font: 600 13px/18px var(--sans); text-align: center; opacity: 0; }
+.diff tr:hover .addc { opacity: 1; }
+.addc:focus-visible { opacity: 1; outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* syntax highlighting (highlight.js classes) */
+:root {
+  --hl-keyword: #ff7b72; --hl-string: #a5d6ff; --hl-comment: #8b949e; --hl-number: #79c0ff;
+  --hl-function: #d2a8ff; --hl-type: #ffa657; --hl-attr: #79c0ff; --hl-tag: #7ee787; --hl-meta: #8b949e; --hl-var: #ffa657;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --hl-keyword: #cf222e; --hl-string: #0a3069; --hl-comment: #6e7781; --hl-number: #0550ae;
+    --hl-function: #8250df; --hl-type: #953800; --hl-attr: #0550ae; --hl-tag: #116329; --hl-meta: #6e7781; --hl-var: #953800;
+  }
+}
+.hljs-keyword, .hljs-selector-tag, .hljs-doctag, .hljs-template-tag, .hljs-type.hljs-keyword { color: var(--hl-keyword); }
+.hljs-string, .hljs-regexp, .hljs-template-variable, .hljs-selector-attr, .hljs-meta .hljs-string { color: var(--hl-string); }
+.hljs-comment, .hljs-quote { color: var(--hl-comment); font-style: italic; }
+.hljs-number, .hljs-literal, .hljs-symbol, .hljs-bullet, .hljs-link { color: var(--hl-number); }
+.hljs-title.function_, .hljs-title.function_.invoke__, .hljs-section { color: var(--hl-function); }
+.hljs-title, .hljs-title.class_, .hljs-type, .hljs-built_in, .hljs-class .hljs-title, .hljs-selector-class, .hljs-selector-id { color: var(--hl-type); }
+.hljs-attr, .hljs-attribute, .hljs-property, .hljs-params .hljs-variable, .hljs-variable.constant_ { color: var(--hl-attr); }
+.hljs-name, .hljs-tag, .hljs-selector-pseudo { color: var(--hl-tag); }
+.hljs-meta, .hljs-meta .hljs-keyword { color: var(--hl-meta); }
+.hljs-variable.language_, .hljs-subst { color: var(--hl-var); }
+.hljs-emphasis { font-style: italic; } .hljs-strong { font-weight: 600; }
+
+/* re-review */
+.tag.updated { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 50%, transparent); }
+.chip.on { border-color: var(--accent); color: var(--text); background: var(--comment-bg); }
+.rereview { border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); background: var(--comment-bg); border-radius: 10px; padding: 12px 18px; font-size: 14.5px; display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
+.rereview b { font-weight: 600; }
+.rereview .muted { color: var(--muted); }
+.modebar { display: flex; gap: 6px; padding: 10px 16px; border-bottom: 1px solid var(--border); align-items: center; font-size: 13px; color: var(--muted); }
+.seg { display: inline-flex; border: 1px solid var(--border-strong); border-radius: 7px; overflow: hidden; }
+.seg button { all: unset; cursor: pointer; padding: 4px 10px; font-size: 12.5px; color: var(--muted); }
+.seg button + button { border-left: 1px solid var(--border-strong); }
+.seg button.on { background: var(--accent); color: var(--accent-ink); }
+.seg .a { color: var(--add); } .seg .d { color: var(--del); }
+.seg button.on .a, .seg button.on .d { color: inherit; }
+.earlier { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+.earlier .lbl { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.ec { border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; }
+.ec .where { font: 12px var(--mono); color: var(--muted); }
+.ec p { margin: 2px 0 0; white-space: pre-wrap; }
+.res { margin-top: 6px; font-size: 13px; color: var(--muted); }
+.res b { font-weight: 600; text-transform: uppercase; font-size: 11px; letter-spacing: .05em; margin-right: 6px; }
+.res.fixed b { color: var(--add); } .res.wont_fix b { color: var(--warn); } .res.question b { color: var(--accent); } .res.open b { color: var(--muted); }
+
+/* inline rows: findings + comments */
+.inline td { padding: 8px 16px 10px 70px !important; font-family: var(--sans); font-size: 14px; white-space: normal; }
+.finding { border-left: 3px solid var(--nit); background: var(--nit-bg); border-radius: 0 8px 8px 0; padding: 10px 14px; }
+.finding.blocker { border-color: var(--blocker); background: var(--blocker-bg); }
+.finding.warn { border-color: var(--warn); background: var(--warn-bg); }
+.finding .fh { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; font-size: 12px; color: var(--muted); }
+.sev { font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: 11px; }
+.finding.blocker .sev { color: var(--blocker); } .finding.warn .sev { color: var(--warn); } .finding.nit .sev { color: var(--nit); }
+.finding .chk { font-family: var(--mono); }
+.finding .fh .spacer { flex: 1; }
+.finding p { margin: 0; }
+.finding .sugg { margin-top: 6px; color: var(--muted); }
+.finding .sugg pre { margin: 6px 0 0; background: var(--panel-2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; font: 12.5px/1.5 var(--mono); color: var(--text); overflow-x: auto; white-space: pre; }
+.pinned-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.comment { background: var(--comment-bg); border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); border-radius: 8px; padding: 10px 14px; }
+.comment .ch { display: flex; gap: 10px; align-items: center; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.comment .ch .spacer { flex: 1; }
+.comment p { margin: 0; white-space: pre-wrap; }
+.linkbtn { all: unset; cursor: pointer; color: var(--muted); font-size: 12px; }
+.linkbtn:hover { color: var(--text); text-decoration: underline; }
+.editor textarea { width: 100%; min-height: 76px; resize: vertical; background: var(--panel); color: var(--text); border: 1px solid var(--border-strong); border-radius: 8px; padding: 10px 12px; font: 14px/1.5 var(--sans); }
+.editor textarea:focus { outline: none; border-color: var(--accent); }
+.editor .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; align-items: center; }
+.editor .hint { color: var(--faint); font-size: 12px; margin-right: auto; }
+
+/* current file, selection, focus */
+.card.current { box-shadow: 0 0 0 2px var(--accent); }
+.diff tr.sel td { background: color-mix(in srgb, var(--accent) 16%, transparent) !important; }
+.diff tr.tour-hl td.code, .diff tr.tour-hl td.g { background: color-mix(in srgb, var(--accent) 22%, transparent) !important; }
+.diff tr.tour-hl td.g:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+body.focus .intro, body.focus .chapter:not(.is-current) { display: none; }
+body.focus .chapter { border-top: none; }
+.focusbar { display: none; }
+body.focus .focusbar { display: flex; gap: 12px; align-items: center; justify-content: center; color: var(--muted); font-size: 13px; padding: 8px; border-bottom: 1px solid var(--border); }
+kbd { font: 11px var(--mono); border: 1px solid var(--border-strong); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; background: var(--panel); color: var(--text); }
+
+/* chapter extras */
+.est { color: var(--faint); font-size: 13px; }
+.box { border: 1px solid var(--border); background: var(--panel); border-radius: 10px; padding: 12px 14px; margin: 0 0 14px; font-size: 14px; }
+.box .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+.box .lbl .spacer { flex: 1; }
+.checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.checks li { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; line-height: 1.45; }
+.checks li .q { flex: 1; }
+.checks li.done .q { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--faint); }
+.qbox { flex: none; width: 15px; height: 15px; margin-top: 2px; border-radius: 4px; border: 1.5px solid var(--border-strong); display: grid; place-content: center; transition: all .15s; }
+.checks li.done .qbox { background: var(--add); border-color: var(--add); }
+.checks li.done .qbox::after { content: ""; width: 7px; height: 4px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(-45deg) translate(1px, -1px); }
+.tourbtn { display: inline-flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.done-check { display: inline-block; width: 22px; height: 22px; margin-left: 10px; vertical-align: -2px; }
+.done-check circle { fill: var(--add); }
+.done-check path { fill: none; stroke: #fff; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 20; stroke-dashoffset: 0; }
+.chapter.just-done .done-check { animation: pop .5s cubic-bezier(.3, 1.6, .5, 1); }
+.chapter.just-done .done-check path { animation: draw .45s .15s ease-out both; }
+.chapter.just-done .chapter-meta h2 { animation: glow 1.2s ease-out; }
+.toc a.just-done { animation: pop .5s cubic-bezier(.3, 1.6, .5, 1); border-color: var(--add); }
+@keyframes pop { 0% { transform: scale(.4); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes draw { from { stroke-dashoffset: 20; } to { stroke-dashoffset: 0; } }
+@keyframes glow { 0% { color: var(--add); } 100% { color: var(--text); } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* tour panel */
+.tour { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); width: min(640px, calc(100vw - 32px)); background: var(--panel); border: 1px solid var(--border-strong); border-radius: 14px; box-shadow: 0 18px 50px rgba(0,0,0,.45); z-index: 40; padding: 16px 18px 14px; }
+.tour .th { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+.tour .th .spacer { flex: 1; }
+.tour .steps { display: flex; gap: 4px; }
+.tour .steps i { width: 18px; height: 4px; border-radius: 2px; background: var(--border-strong); }
+.tour .steps i.on { background: var(--accent); }
+.tour .note { font-size: 16px; line-height: 1.55; margin: 0 0 10px; }
+.tour .where { font: 12px var(--mono); color: var(--muted); }
+.tour .tf { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.tour .tf .spacer { flex: 1; }
+
+/* modal: help + receipt */
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 60; display: grid; place-items: center; padding: 16px; animation: fade .2s ease-out; }
+@keyframes fade { from { opacity: 0; } }
+.modal { background: var(--panel); border: 1px solid var(--border-strong); border-radius: 16px; width: min(520px, 100%); padding: 26px 26px 20px; box-shadow: 0 24px 60px rgba(0,0,0,.5); animation: rise .35s cubic-bezier(.2, 1.2, .4, 1); }
+@keyframes rise { from { transform: translateY(16px) scale(.97); opacity: 0; } }
+.modal h3 { margin: 0 0 4px; font-size: 22px; }
+.modal .sub { color: var(--muted); margin: 0 0 18px; font-size: 14px; }
+.receipt .big { width: 54px; height: 54px; margin-bottom: 12px; }
+.receipt .big circle { fill: var(--add); }
+.receipt .big path { fill: none; stroke: #fff; stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 40; animation: draw2 .5s .2s ease-out both; }
+@keyframes draw2 { from { stroke-dashoffset: 40; } to { stroke-dashoffset: 0; } }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+.stats div { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+.stats b { display: block; font-size: 22px; font-weight: 600; letter-spacing: -.01em; }
+.stats span { color: var(--muted); font-size: 12.5px; }
+.modal .row { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.keys { display: grid; grid-template-columns: auto 1fr; gap: 8px 14px; font-size: 14px; margin-bottom: 18px; align-items: center; }
+.keys kbd { justify-self: start; }
+canvas.confetti { position: fixed; inset: 0; pointer-events: none; z-index: 70; }
+
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 8px; font-size: 14px; opacity: 0; pointer-events: none; transition: all .2s; z-index: 50; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+footer { color: var(--faint); font-size: 12px; text-align: center; padding: 20px; }
+
+@media (max-width: 1000px) {
+  .top { position: static; }
+  .chapter { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .chapter-meta { position: static; max-height: none; }
+  .mini { display: none; }
+  .top-inner, main { padding-left: 16px; padding-right: 16px; }
+  .card.open .card-head { position: static; }
+  .top h1 { max-width: 100%; }
+  .card-head .dir { display: none; }
+}
+</style>
+</head>
+<body>
+<header class="top"><div class="top-inner" id="top"></div><div class="focusbar" id="focusbar"></div></header>
+<main id="app"></main>
+<footer id="foot"></footer>
+<div class="toast" id="toast"></div>
+
+<script>/*__HIGHLIGHT_JS__*/</script>
+<script>
+const DATA = /*__REVIEW_DATA__*/null;
+const { guide, files, meta } = DATA;
+const fileByPath = new Map(files.map((f) => [f.path, f]));
+const SEVS = ["blocker", "warn", "nit"];
+const SEV_LABEL = { blocker: "Blocker", warn: "Warning", nit: "Nit" };
+const findings = guide.findings.slice().sort((a, b) => SEVS.indexOf(a.severity) - SEVS.indexOf(b.severity));
+const findingsByFile = new Map();
+for (const f of findings) {
+  if (!findingsByFile.has(f.file)) findingsByFile.set(f.file, []);
+  findingsByFile.get(f.file).push(f);
+}
+const chapterOf = new Map();
+guide.chapters.forEach((ch, i) => ch.files.forEach((p) => chapterOf.set(p, i)));
+
+// ---------- state (per-viewer, stored in this browser only) ----------
+const PREV = DATA.previous; // set when this is a re-review
+let state = { reviewed: {}, comments: [], open: {}, mode: {}, onlyChanged: true, checksDone: {}, spent: 0, celebrated: false, current: null, focus: false };
+let editing = null; // { file, key, id? }
+let restored = false;
+try {
+  const saved = JSON.parse(localStorage.getItem(meta.key) || "null");
+  if (saved) { state = { ...state, ...saved }; restored = true; }
+} catch (e) {}
+// Files you already reviewed that haven't changed since start out ticked.
+if (!restored) for (const f of files) if (f.review === "unchanged") state.reviewed[f.path] = true;
+
+const isVisible = (p) => !(PREV && state.onlyChanged && fileByPath.get(p).review === "unchanged");
+const visibleFiles = (ch) => ch.files.filter(isVisible);
+// "since" = only what changed since your last review; "full" = the whole PR diff.
+const modeOf = (f) => (f.since ? state.mode[f.path] || "since" : "full");
+const sourceOf = (f) => (modeOf(f) === "since" ? f.since : f);
+function save() {
+  try { localStorage.setItem(meta.key, JSON.stringify(state)); } catch (e) {}
+}
+
+// ---------- helpers ----------
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k === "class") el.className = v;
+    else if (k === "text") el.textContent = v;
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2), v);
+    else if (k === "checked" || k === "indeterminate") el[k] = v;
+    else el.setAttribute(k, v === true ? "" : v);
+  }
+  for (const kid of kids.flat(Infinity)) {
+    if (kid == null || kid === false) continue;
+    el.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  }
+  return el;
+}
+const pad = (n) => String(n).padStart(2, "0");
+const base = (p) => p.split("/").pop();
+const dir = (p) => (p.includes("/") ? p.slice(0, p.lastIndexOf("/") + 1) : "");
+const ext = (p) => { const b = base(p); return b.includes(".") ? b.split(".").pop().slice(0, 4).toUpperCase() : "TXT"; };
+const fileId = (p) => "f-" + p.replace(/[^a-zA-Z0-9]/g, "-");
+const lineKey = (l) => (l.n != null ? "n" + l.n : "o" + l.o);
+const keyLabel = (k) => (k[0] === "n" ? "L" + k.slice(1) : "old L" + k.slice(1));
+
+// Inline markdown: [text](path#L12) links into the code, `code` spans.
+function rich(text) {
+  const out = [];
+  const re = /\[([^\]]+)\]\(([^)\s]+)\)|`([^`]+)`/g;
+  let last = 0, m;
+  while ((m = re.exec(text))) {
+    if (m.index > last) out.push(text.slice(last, m.index));
+    if (m[3] != null) out.push(h("code", { text: m[3] }));
+    else {
+      const [path, frag] = m[2].split("#");
+      const line = frag && /^L\d+/.test(frag) ? Number(frag.slice(1)) : null;
+      if (fileByPath.has(path)) {
+        out.push(h("a", { class: "ref", href: "#" + fileId(path), title: path + (line ? ":" + line : ""),
+          onclick: (e) => { e.preventDefault(); reveal(path, line); } }, /^`[^`]+`$/.test(m[1]) ? h("code", { text: m[1].slice(1, -1) }) : m[1]));
+      } else out.push(m[1]);
+    }
+    last = re.lastIndex;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
+
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+// ---------- syntax highlighting ----------
+const LANG_BY_EXT = {
+  ts: "typescript", tsx: "typescript", mts: "typescript", cts: "typescript",
+  js: "javascript", jsx: "javascript", mjs: "javascript", cjs: "javascript",
+  py: "python", pyi: "python", go: "go", rs: "rust", rb: "ruby", java: "java", kt: "kotlin", kts: "kotlin",
+  swift: "swift", php: "php", cs: "csharp", c: "c", h: "c", cc: "cpp", cpp: "cpp", hpp: "cpp", m: "objectivec",
+  css: "css", scss: "scss", less: "less", html: "xml", htm: "xml", xml: "xml", svg: "xml", vue: "xml",
+  json: "json", jsonc: "json", json5: "json", yml: "yaml", yaml: "yaml", toml: "ini", ini: "ini", cfg: "ini",
+  md: "markdown", mdx: "markdown", sql: "sql", sh: "bash", bash: "bash", zsh: "bash",
+  graphql: "graphql", gql: "graphql", lua: "lua", r: "r", pl: "perl", diff: "diff", patch: "diff",
+};
+function langFor(path) {
+  if (!window.hljs) return null;
+  const b = base(path).toLowerCase();
+  const lang = b === "dockerfile" || b.startsWith("dockerfile.") ? "dockerfile"
+    : b === "makefile" ? "makefile"
+    : LANG_BY_EXT[b.includes(".") ? b.split(".").pop() : ""];
+  return lang && hljs.getLanguage(lang) ? lang : null;
+}
+
+// highlight.js returns one HTML string with spans that can cross newlines
+// (block comments, template strings). Split it into per-line HTML, closing
+// and reopening the open spans at each line break.
+function splitHighlighted(html) {
+  const out = [];
+  const stack = [];
+  let line = "";
+  const re = /(<span[^>]*>)|(<\/span>)|([^<]+)/g;
+  let m;
+  while ((m = re.exec(html))) {
+    if (m[1]) { stack.push(m[1]); line += m[1]; }
+    else if (m[2]) { stack.pop(); line += m[2]; }
+    else {
+      const parts = m[3].split("\n");
+      line += parts[0];
+      for (let i = 1; i < parts.length; i++) {
+        out.push(line + "</span>".repeat(stack.length));
+        line = stack.join("") + parts[i];
+      }
+    }
+  }
+  out.push(line + "</span>".repeat(stack.length));
+  return out;
+}
+
+// Highlight each hunk twice: the new side (context + added) and the old side
+// (context + deleted), so every line is coloured with the code around it.
+const hlCache = new Map();
+function highlightFile(f, src) {
+  const cacheKey = f.path + "|" + modeOf(f);
+  if (hlCache.has(cacheKey)) return hlCache.get(cacheKey);
+  const lang = langFor(f.path);
+  const result = new Map(); // line object -> html
+  if (lang) {
+    for (const hk of src.hunks) {
+      for (const side of ["new", "old"]) {
+        const lines = hk.lines.filter((l) => (side === "new" ? l.t !== "del" : l.t !== "add"));
+        if (!lines.length) continue;
+        let html;
+        try { html = hljs.highlight(lines.map((l) => l.s).join("\n"), { language: lang, ignoreIllegals: true }).value; }
+        catch (e) { continue; }
+        const split = splitHighlighted(html);
+        lines.forEach((l, i) => { if (side === "new" || l.t === "del") result.set(l, split[i] ?? ""); });
+      }
+    }
+  }
+  hlCache.set(cacheKey, result);
+  return result;
+}
+
+function codeCell(l, hl) {
+  const td = h("td", { class: "code" }, h("span", { class: "sign" }, l.t === "add" ? "+" : l.t === "del" ? "-" : " "));
+  const html = hl.get(l);
+  if (html != null) {
+    const span = document.createElement("span");
+    span.innerHTML = html; // highlight.js escapes the source text
+    td.append(span);
+  } else td.append(l.s);
+  return td;
+}
+
+// ---------- header ----------
+function renderTop() {
+  const total = files.length;
+  const done = files.filter((f) => state.reviewed[f.path]).length;
+  const counts = Object.fromEntries(SEVS.map((s) => [s, findings.filter((f) => f.severity === s).length]));
+  const top = document.getElementById("top");
+  top.replaceChildren(...[
+    h("div", { style: "min-width:0" },
+      h("h1", { title: guide.title }, guide.title),
+      h("div", { class: "refs" }, `${meta.base} ← ${meta.head} · ${meta.sha}`)),
+    h("div", { class: "chips" },
+      SEVS.map((s) => h("button", { class: "chip", disabled: counts[s] === 0, title: counts[s] ? `Jump to next ${SEV_LABEL[s].toLowerCase()}` : "",
+        onclick: () => nextFinding(s) }, h("span", { class: "dot " + s }), `${counts[s]} ${SEV_LABEL[s].toLowerCase()}${counts[s] === 1 ? "" : "s"}`))),
+    PREV ? h("button", { class: "chip" + (state.onlyChanged ? " on" : ""), title: "Only show files that changed since your last review",
+      onclick: () => { state.onlyChanged = !state.onlyChanged; save(); if (!state.current || !fileByPath.has(state.current)) state.current = null;
+renderAll(); } },
+      state.onlyChanged ? "✓ Changed only" : "Changed only") : null,
+    h("div", { class: "progress" }, h("div", { class: "bar" }, h("i", { style: `width:${total ? (done / total) * 100 : 0}%` })), `${done} / ${total} files`,
+      done < total ? h("span", { class: "est", title: "Rough estimate based on size and risk" }, "· " + fmtMin(remainingSeconds()) + " left")
+        : h("button", { class: "linkbtn", onclick: showReceipt }, "· Summary")),
+    h("button", { class: "btn" + (state.focus ? " primary" : ""), title: "Focus on one chapter (f)", onclick: toggleFocus }, "Focus"),
+    h("button", { class: "btn", onclick: toggleAll }, files.filter((f) => isVisible(f.path)).every((f) => state.open[f.path]) ? "Collapse all" : "Expand all"),
+    h("button", { class: "btn primary", onclick: exportComments, title: "Copy your comments and what you've reviewed, to paste into Claude Code (e)" },
+      `Export for Claude${state.comments.length ? ` (${state.comments.length})` : ""}`),
+    h("button", { class: "btn", title: "Keyboard shortcuts (?)", onclick: showHelp, "aria-label": "Keyboard shortcuts" }, "?"),
+  ].filter(Boolean));
+  renderFocusBar();
+}
+
+let cursor = { blocker: -1, warn: -1, nit: -1 };
+function nextFinding(sev) {
+  const list = findings.filter((f) => f.severity === sev);
+  if (!list.length) return;
+  cursor[sev] = (cursor[sev] + 1) % list.length;
+  const f = list[cursor[sev]];
+  reveal(f.file, f.pinned ? null : f.line, "fd-" + f.id);
+}
+
+function toggleAll() {
+  const shown = files.filter((f) => isVisible(f.path));
+  const open = !shown.every((f) => state.open[f.path]);
+  for (const f of shown) state.open[f.path] = open;
+  save();
+  renderAll();
+}
+
+// ---------- intro ----------
+function renderIntro() {
+  const intro = h("section", { class: "intro" },
+    h("div", { class: "intent" + (guide.intent_clear === false ? " unclear" : "") },
+      h("div", { class: "label" }, guide.intent_clear === false ? "Intent: unclear" : "Intent"),
+      h("p", {}, rich(guide.intent)),
+      guide.intent_clear === false && guide.intent_note ? h("div", { class: "note" }, rich(guide.intent_note)) : null,
+      guide.url ? h("div", { style: "margin-top:8px;font-size:13px" }, h("a", { href: guide.url, target: "_blank", rel: "noopener", style: "color:var(--muted)" }, guide.url)) : null),
+    PREV ? renderRereview() : null,
+    meta.warnings.length ? h("details", { class: "warnings" },
+      h("summary", {}, `${meta.warnings.length} guide warning${meta.warnings.length === 1 ? "" : "s"}`),
+      h("ul", {}, meta.warnings.map((w) => h("li", {}, w)))) : null,
+    h("nav", { class: "toc", id: "toc" }));
+  return intro;
+}
+
+function renderRereview() {
+  const c = (r) => files.filter((f) => f.review === r).length;
+  const res = (st) => PREV.comments.filter((x) => (x.resolution?.status || "open") === st).length;
+  const when = PREV.reviewedAt ? new Date(PREV.reviewedAt).toLocaleString() : null;
+  return h("div", { class: "rereview" },
+    h("span", {}, h("b", {}, "Re-review"), when ? h("span", { class: "muted" }, " · last review " + when) : null),
+    h("span", {}, h("b", {}, c("updated")), " updated since your review"),
+    h("span", {}, h("b", {}, c("new")), " not reviewed yet"),
+    h("span", { class: "muted" }, `${c("unchanged")} unchanged${state.onlyChanged ? " (hidden)" : ""}`),
+    PREV.comments.length ? h("span", { class: "muted" },
+      `${PREV.comments.length} earlier comment${PREV.comments.length === 1 ? "" : "s"}: ${res("fixed")} fixed` +
+      (res("wont_fix") ? `, ${res("wont_fix")} won't fix` : "") + (res("question") ? `, ${res("question")} need your answer` : "") +
+      (res("open") ? `, ${res("open")} not addressed` : "")) : null);
+}
+
+function renderToc() {
+  const toc = document.getElementById("toc");
+  toc.replaceChildren(...guide.chapters.map((ch, i) => {
+    if (!visibleFiles(ch).length) return null;
+    const done = ch.files.filter((p) => state.reviewed[p]).length;
+    return h("a", { href: "#ch-" + ch.id, class: done === ch.files.length ? "done" : "" },
+      h("span", { class: "dot " + ch.risk, title: ch.risk + " risk" }),
+      h("span", { class: "num" }, pad(i + 1)),
+      h("span", { class: "title" }, ch.title),
+      h("span", { class: "count" }, `${done}/${ch.files.length}`));
+  }).filter(Boolean));
+}
+
+// ---------- chapters ----------
+function renderChapter(ch, i) {
+  return h("section", { class: "chapter" + (ch.unassigned ? " unassigned" : ""), id: "ch-" + ch.id },
+    h("div", { class: "chapter-meta", id: "meta-" + ch.id }, chapterMeta(ch, i)),
+    h("div", { class: "files" }, visibleFiles(ch).map((p) => renderCard(p))));
+}
+
+function chapterMeta(ch, i) {
+  const done = ch.files.filter((p) => state.reviewed[p]).length;
+  const all = done === ch.files.length;
+  return [
+    h("h2", {}, ch.title, all ? doneCheck() : null),
+    h("div", { class: "meta-row" },
+      h("span", { class: "num" }, h("b", {}, pad(i + 1)), ` / ${pad(guide.chapters.length)}`),
+      h("span", { class: "est" }, fmtMin(chapterSeconds(ch))),
+      h("label", { class: "check" },
+        h("input", { type: "checkbox", checked: all, indeterminate: done > 0 && !all,
+          onchange: (e) => { for (const p of ch.files) setReviewed(p, e.target.checked, false); refresh(ch.files); } }),
+        "Reviewed")),
+    h("div", { class: "risk " + ch.risk }, h("span", { class: "dot " + ch.risk }), h("b", {}, ch.risk + " risk"), ch.risk_reason ? "· " + ch.risk_reason : ""),
+    h("p", { class: "summary" }, rich(ch.summary)),
+    ch.tour && ch.tour.length ? h("button", { class: "btn tourbtn", onclick: () => startTour(i) }, "▶ Walk me through", h("kbd", {}, "t")) : null,
+    ch.checks && ch.checks.length ? h("div", { class: "box" },
+      h("div", { class: "lbl" }, "What to check"),
+      h("ul", { class: "checks" }, ch.checks.map((q, qi) => {
+        const k = ch.id + ":" + qi;
+        return h("li", { class: state.checksDone[k] ? "done" : "", onclick: () => { state.checksDone[k] = !state.checksDone[k]; save(); refresh(ch.files); } },
+          h("span", { class: "qbox" }), h("span", { class: "q" }, rich(q)));
+      }))) : null,
+    ch.test ? h("div", { class: "box" },
+      h("div", { class: "lbl" }, "How to try it", h("span", { class: "spacer" }),
+        h("button", { class: "linkbtn", onclick: () => copyText(ch.test.replace(/`/g, ""), "Copied") }, "Copy")),
+      h("div", {}, rich(ch.test))) : null,
+    h("div", { class: "mini" }, visibleFiles(ch).map((p) => {
+      const fs = findingsByFile.get(p) || [];
+      const worst = SEVS.find((s) => fs.some((f) => f.severity === s));
+      return h("button", { class: state.reviewed[p] ? "reviewed" : "", onclick: () => reveal(p, null) },
+        h("span", { class: "ext" }, ext(p)),
+        h("span", { class: "name" }, base(p)),
+        h("span", { class: "dir" }, dir(p)),
+        worst ? h("span", { class: "dot " + worst, title: `${fs.length} finding${fs.length === 1 ? "" : "s"}` }) : null,
+        h("span", { class: "tick" }, state.reviewed[p] ? "✓" : ""));
+    })),
+  ].filter(Boolean);
+}
+
+function renderCard(path) {
+  const f = fileByPath.get(path);
+  const open = !!state.open[path];
+  const fs = findingsByFile.get(path) || [];
+  const comments = state.comments.filter((c) => c.file === path);
+  const reviewed = !!state.reviewed[path];
+  const tag = f.status === "added" ? "new" : f.status === "deleted" ? "deleted" : f.status === "renamed" ? "renamed" : null;
+
+  const head = h("div", { class: "card-head", onclick: (e) => {
+      if (e.target.closest(".check")) return;
+      state.open[path] = !open; setCurrent(path, false); save(); refresh([path]);
+    } },
+    h("span", { class: "chev" }, "›"),
+    h("span", { class: "ext" }, ext(path)),
+    h("span", { class: "name" }, base(path)),
+    h("span", { class: "dir", title: f.status === "renamed" ? `${f.oldPath} → ${path}` : path }, f.status === "renamed" ? `${dir(path)} (from ${f.oldPath})` : dir(path)),
+    tag ? h("span", { class: "tag" }, tag) : null,
+    f.review === "updated" ? h("span", { class: "tag updated", title: "Changed since you last reviewed it" }, "updated") : null,
+    f.review === "unchanged" ? h("span", { class: "tag", title: "Same content as when you reviewed it" }, "unchanged") : null,
+    f.whitespaceOnly ? h("span", { class: "tag", title: "Only whitespace changed" }, "whitespace only") : null,
+    SEVS.filter((s) => fs.some((x) => x.severity === s)).map((s) => h("span", { class: "fbadge", title: SEV_LABEL[s] }, h("span", { class: "dot " + s }), fs.filter((x) => x.severity === s).length)),
+    comments.length ? h("span", { class: "fbadge", title: "Your comments" }, "💬 " + comments.length) : null,
+    h("span", { class: "stat" }, f.additions ? h("span", { class: "a" }, "+" + f.additions) : null, f.deletions ? h("span", { class: "d" }, "-" + f.deletions) : null),
+    h("label", { class: "check", onclick: (e) => e.stopPropagation() },
+      h("input", { type: "checkbox", checked: reviewed, onchange: (e) => {
+        // Ticking a file you had open moves you on to the next one.
+        if (e.target.checked && open) markAndAdvance(path); else setReviewed(path, e.target.checked, true);
+      } }),
+      "Reviewed"));
+
+  return h("article", { class: "card" + (open ? " open" : "") + (reviewed ? " reviewed" : "") + (state.current === path ? " current" : ""), id: fileId(path) },
+    head, open ? renderBody(f, fs) : null);
+}
+
+function renderBody(f, fs) {
+  const body = h("div", { class: "card-body" });
+  if (f.binary) { body.append(h("div", { class: "note-row" }, "Binary file, not shown.")); return body; }
+  const src = sourceOf(f);
+  if (f.since) {
+    const opt = (m, label, d) => h("button", { class: modeOf(f) === m ? "on" : "",
+      onclick: () => { state.mode[f.path] = m; save(); refresh([f.path]); } },
+      label + " ", h("span", { class: "a" }, "+" + d.additions), " ", h("span", { class: "d" }, "-" + d.deletions));
+    body.append(h("div", { class: "modebar" }, "Show",
+      h("span", { class: "seg" }, opt("since", "Since your review", f.since), opt("full", "Full PR diff", f))));
+  }
+  const earlier = PREV ? PREV.comments.filter((c) => c.file === f.path) : [];
+  if (earlier.length) body.append(h("div", { class: "earlier" },
+    h("div", { class: "lbl" }, "Earlier comments"),
+    earlier.map((c) => {
+      const st = c.resolution?.status || "open";
+      const label = { fixed: "Fixed", wont_fix: "Won't fix", question: "Needs your answer", open: "Not addressed" }[st] || st;
+      return h("div", { class: "ec" },
+        h("div", { class: "where" }, c.line ? `${c.side === "old" ? "old " : ""}L${c.line} (at the time)` : "file"),
+        h("p", {}, rich(c.text)),
+        h("div", { class: "res " + st }, h("b", {}, label), c.resolution?.note ? rich(c.resolution.note) : null));
+    })));
+  if (!src.hunks.length) { body.append(h("div", { class: "note-row" }, f.status === "renamed" ? "Renamed without changes." : "No textual changes.")); return body; }
+
+  const table = h("table", { class: "diff" });
+  const pinned = fs.filter((x) => x.pinned);
+  if (pinned.length) table.append(h("tr", { class: "inline" }, h("td", { colspan: 4 },
+    h("div", { class: "pinned-label" }, "Findings on lines outside the diff"),
+    pinned.map((x) => h("div", { style: "margin-bottom:6px" }, renderFinding(x))))));
+
+  const byLine = new Map();
+  for (const x of fs) if (!x.pinned) { if (!byLine.has(x.line)) byLine.set(x.line, []); byLine.get(x.line).push(x); }
+
+  const hl = highlightFile(f, src);
+  for (const hk of src.hunks) {
+    table.append(h("tr", { class: "hunk" }, h("td", { colspan: 4 }, hk.header.replace(/^(@@[^@]+@@).*/, "$1") + (hk.context ? "  " + hk.context : ""))));
+    for (const l of hk.lines) {
+      const key = lineKey(l);
+      const isSel = selected && selected.file === f.path && selected.key === key;
+      table.append(h("tr", { class: l.t + (isSel ? " sel" : ""), "data-key": key,
+          onclick: (e) => { if (e.target.closest("button")) return; selectRow(f.path, key); } },
+        h("td", { class: "g" }, l.o ?? ""),
+        h("td", { class: "g" }, l.n ?? ""),
+        h("td", { class: "c" }, h("button", { class: "addc", title: "Comment on this line", "aria-label": "Comment on this line",
+          onclick: () => { editing = { file: f.path, key }; refresh([f.path]); } }, "+")),
+        codeCell(l, hl)));
+
+      const lf = l.t !== "del" ? byLine.get(l.n) : null;
+      if (lf) for (const x of lf) table.append(h("tr", { class: "inline" }, h("td", { colspan: 4 }, renderFinding(x))));
+      for (const c of state.comments.filter((c) => c.file === f.path && c.key === key)) {
+        table.append(h("tr", { class: "inline" }, h("td", { colspan: 4 },
+          editing && editing.id === c.id ? renderEditor(f.path, key, c) : renderComment(c))));
+      }
+      if (editing && !editing.id && editing.file === f.path && editing.key === key) {
+        table.append(h("tr", { class: "inline" }, h("td", { colspan: 4 }, renderEditor(f.path, key, null))));
+      }
+    }
+  }
+  body.append(table);
+  if (src.truncated) body.append(h("div", { class: "note-row" }, "Diff truncated. Open the file locally to see the rest."));
+  return body;
+}
+
+function renderFinding(x) {
+  const added = state.comments.some((c) => c.findingId === x.id);
+  const sugg = x.suggestion
+    ? (x.suggestion.includes("\n") ? h("div", { class: "sugg" }, "Suggestion:", h("pre", { text: x.suggestion })) : h("div", { class: "sugg" }, "Suggestion: ", rich(x.suggestion)))
+    : null;
+  return h("div", { class: "finding " + x.severity, id: "fd-" + x.id },
+    h("div", { class: "fh" },
+      h("span", { class: "sev" }, SEV_LABEL[x.severity]),
+      h("span", { class: "chk" }, x.check),
+      h("span", { class: "spacer" }),
+      added ? h("span", {}, "✓ In your comments")
+        : h("button", { class: "btn small", title: "Add this finding to the comments you export to Claude",
+            onclick: () => {
+              const key = "n" + x.line;
+              state.comments.push({ id: "c" + Date.now(), file: x.file, key, findingId: x.id,
+                text: `[${x.check}] ${x.message}${x.suggestion ? "\nSuggestion: " + x.suggestion : ""}` });
+              save(); refresh([x.file]);
+            } }, "Add to comments")),
+    h("p", {}, rich(x.message)),
+    sugg);
+}
+
+function renderComment(c) {
+  return h("div", { class: "comment" },
+    h("div", { class: "ch" }, h("span", {}, c.findingId ? "Your comment (from finding)" : "Your comment"), h("span", { class: "spacer" }),
+      h("button", { class: "linkbtn", onclick: () => { editing = { file: c.file, key: c.key, id: c.id }; refresh([c.file]); } }, "Edit"),
+      h("button", { class: "linkbtn", onclick: () => { state.comments = state.comments.filter((x) => x.id !== c.id); save(); refresh([c.file]); } }, "Delete")),
+    h("p", {}, rich(c.text)));
+}
+
+function renderEditor(file, key, existing) {
+  const ta = h("textarea", { placeholder: "What should change here?" });
+  ta.value = existing ? existing.text : "";
+  const commit = () => {
+    const text = ta.value.trim();
+    if (existing) {
+      if (text) existing.text = text; else state.comments = state.comments.filter((x) => x.id !== existing.id);
+    } else if (text) state.comments.push({ id: "c" + Date.now(), file, key, text });
+    editing = null; save(); refresh([file]);
+  };
+  ta.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); commit(); }
+    if (e.key === "Escape") { editing = null; refresh([file]); }
+  });
+  setTimeout(() => ta.focus(), 0);
+  return h("div", { class: "editor" }, ta,
+    h("div", { class: "row" },
+      h("span", { class: "hint" }, `${base(file)} · ${keyLabel(key)} · ⌘/Ctrl+Enter to save`),
+      h("button", { class: "btn small", onclick: () => { editing = null; refresh([file]); } }, "Cancel"),
+      h("button", { class: "btn small primary", onclick: commit }, "Save")));
+}
+
+// ---------- updates ----------
+function setReviewed(path, value, rerender) {
+  state.reviewed[path] = value;
+  if (value) state.open[path] = false;
+  save();
+  if (rerender) {
+    const card = document.getElementById(fileId(path));
+    const above = card && card.getBoundingClientRect().top < 70;
+    refresh([path]);
+    if (above) document.getElementById(fileId(path)).scrollIntoView({ block: "start" });
+  }
+}
+
+function refresh(paths) {
+  const chs = new Set();
+  for (const p of paths) {
+    const old = document.getElementById(fileId(p));
+    if (old) old.replaceWith(renderCard(p));
+    chs.add(chapterOf.get(p));
+  }
+  for (const i of chs) {
+    const ch = guide.chapters[i];
+    const m = document.getElementById("meta-" + ch.id);
+    if (m) m.replaceChildren(...chapterMeta(ch, i));
+  }
+  renderTop();
+  renderToc();
+  checkProgress();
+}
+
+function reveal(path, line, targetId) {
+  if (!isVisible(path)) { state.onlyChanged = false; state.open[path] = true; save(); renderAll(); }
+  if (!state.open[path]) { state.open[path] = true; save(); refresh([path]); }
+  setCurrent(path, false);
+  requestAnimationFrame(() => {
+    const card = document.getElementById(fileId(path));
+    let target = targetId ? document.getElementById(targetId) : null;
+    let row = null;
+    if (!target && line != null) row = card.querySelector(`tr[data-key="n${line}"]`);
+    target = target || row || card;
+    target.scrollIntoView({ block: target === card ? "start" : "center", behavior: reduceMotion ? "auto" : "smooth" });
+    if (reveal.quiet) return;
+    const flash = row || (target.closest && target.closest("tr")) || null;
+    if (flash) { flash.classList.add("flash"); setTimeout(() => flash.classList.remove("flash"), 1400); }
+  });
+}
+
+// ---------- export ----------
+// Copies a markdown block for Claude: your comments, plus a machine-readable
+// record of exactly which version of each file you reviewed. Claude saves that
+// record so the next /pr-review only shows what changed since.
+function exportComments() {
+  const order = new Map(guide.chapters.flatMap((ch) => ch.files).map((p, i) => [p, i])); // reading order
+  const sorted = state.comments.slice().sort((a, b) =>
+    (order.get(a.file) - order.get(b.file)) || (Number(a.key.slice(1)) - Number(b.key.slice(1))));
+
+  const reviewed = {};
+  for (const f of files) {
+    if (state.reviewed[f.path]) reviewed[f.path] = f.blob;
+    else if (f.prevBlob) reviewed[f.path] = f.prevBlob; // keep the last version you did review
+  }
+  const record = {
+    version: 1,
+    reviewed_at: new Date().toISOString(),
+    base: meta.base,
+    head: meta.head,
+    reviewed,
+    comments: sorted.map((c) => ({
+      file: c.file,
+      line: Number(c.key.slice(1)),
+      side: c.key[0] === "n" ? "new" : "old",
+      blob: fileByPath.get(c.file)?.blob,
+      text: c.text,
+    })),
+  };
+
+  const lines = ["<!-- pr-review-comments -->", `## Review comments: ${guide.title}`, "",
+    sorted.length
+      ? `Base \`${meta.base}\` ← \`${meta.head}\`. Save the review state below (see the pr-review skill), then address each comment and list what you changed.`
+      : `No comments. I reviewed ${Object.keys(reviewed).length} file(s). Save the review state below (see the pr-review skill) so the next review only shows what changes.`,
+    ""];
+  sorted.forEach((c, i) => {
+    const f = fileByPath.get(c.file);
+    const all = f ? [...f.hunks, ...(f.since ? f.since.hunks : [])].flatMap((hk) => hk.lines) : [];
+    const ln = all.find((l) => lineKey(l) === c.key);
+    lines.push(`${i + 1}. \`${c.file}\` ${keyLabel(c.key)}`);
+    if (ln) lines.push("   ```", "   " + ln.s, "   ```");
+    for (const t of c.text.split("\n")) lines.push("   " + t);
+    lines.push("");
+  });
+  lines.push("<!-- pr-review-state", JSON.stringify(record, null, 2).replace(/-->/g, "--\\u003e"), "-->");
+
+  const md = lines.join("\n");
+  const done = () => toast(sorted.length
+    ? `Copied ${sorted.length} comment${sorted.length === 1 ? "" : "s"}. Paste into Claude Code`
+    : "Copied your review state. Paste into Claude Code");
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(md).then(done, () => fallbackCopy(md, done));
+  else fallbackCopy(md, done);
+}
+function fallbackCopy(text, done) {
+  const ta = h("textarea", { style: "position:fixed;left:-9999px" });
+  ta.value = text; document.body.append(ta); ta.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch (e) {}
+  ta.remove();
+  if (ok) done();
+  else {
+    const blob = new Blob([text], { type: "text/markdown" });
+    const a = h("a", { href: URL.createObjectURL(blob), download: "review-comments.md" });
+    document.body.append(a); a.click(); a.remove();
+    toast("Clipboard blocked, downloaded review-comments.md instead");
+  }
+}
+
+
+// ---------- flow: current file, keyboard, focus, time ----------
+const reduceMotion = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+let selected = null; // { file, key }: the line "c" comments on
+let doneCache = [];
+
+// Files in reading order (chapter by chapter), only the ones on screen.
+const readingOrder = () => guide.chapters.flatMap((ch) => visibleFiles(ch));
+const chapterDone = (ch) => ch.files.every((p) => state.reviewed[p]);
+
+// Rough review time: seconds per changed line, by risk.
+const RATE = { high: 4, medium: 2.5, low: 0.6 };
+function fileSeconds(p) {
+  const f = fileByPath.get(p);
+  if (f.whitespaceOnly || f.binary) return 5;
+  const src = sourceOf(f);
+  const ch = guide.chapters[chapterOf.get(p)];
+  return Math.max(15, (src.additions + src.deletions) * (RATE[ch ? ch.risk : "medium"] || 2.5));
+}
+const chapterSeconds = (ch) => visibleFiles(ch).reduce((n, p) => n + fileSeconds(p), 0);
+const remainingSeconds = () => readingOrder().filter((p) => !state.reviewed[p]).reduce((n, p) => n + fileSeconds(p), 0);
+function fmtMin(sec) {
+  const m = Math.round(sec / 60);
+  return m < 1 ? "<1 min" : `~${m} min`;
+}
+
+// Active review time: counts while the page is visible and you've touched it in the last minute.
+let lastActive = Date.now();
+for (const ev of ["keydown", "mousedown", "wheel", "touchstart", "mousemove"]) addEventListener(ev, () => (lastActive = Date.now()), { passive: true });
+setInterval(() => {
+  if (document.visibilityState === "visible" && Date.now() - lastActive < 60000) { state.spent += 5; save(); }
+}, 5000);
+
+function setCurrent(path, scroll = true) {
+  const prev = state.current;
+  state.current = path;
+  if (prev && prev !== path) document.getElementById(fileId(prev))?.classList.remove("current");
+  const card = document.getElementById(fileId(path));
+  if (card) card.classList.add("current");
+  applyFocus();
+  if (scroll && card) card.scrollIntoView({ block: "start", behavior: reduceMotion ? "auto" : "smooth" });
+}
+
+function move(delta) {
+  const order = readingOrder();
+  if (!order.length) return;
+  const i = order.indexOf(state.current);
+  const next = order[i < 0 ? 0 : Math.min(order.length - 1, Math.max(0, i + delta))];
+  setCurrent(next);
+  save();
+}
+
+// Mark a file reviewed and open the next unreviewed one.
+function markAndAdvance(path) {
+  const order = readingOrder();
+  const i = order.indexOf(path);
+  const next = [...order.slice(i + 1), ...order.slice(0, Math.max(0, i))].find((p) => !state.reviewed[p] && p !== path);
+  state.reviewed[path] = true;
+  state.open[path] = false;
+  if (next) state.open[next] = true;
+  save();
+  refresh(next ? [path, next] : [path]);
+  if (next) {
+    setCurrent(next, false);
+    requestAnimationFrame(() => document.getElementById(fileId(next))?.scrollIntoView({ block: "start", behavior: reduceMotion ? "auto" : "smooth" }));
+  }
+}
+
+function selectRow(file, key) {
+  const prev = selected;
+  selected = { file, key };
+  if (prev) document.querySelector(`#${fileId(prev.file)} tr[data-key="${prev.key}"]`)?.classList.remove("sel");
+  document.querySelector(`#${fileId(file)} tr[data-key="${key}"]`)?.classList.add("sel");
+  setCurrent(file, false);
+}
+
+function commentOnCurrent() {
+  const path = state.current || readingOrder()[0];
+  if (!path) return;
+  const f = fileByPath.get(path);
+  let key = selected && selected.file === path ? selected.key : null;
+  if (!key) {
+    const first = sourceOf(f).hunks.flatMap((hk) => hk.lines).find((l) => l.t !== "ctx");
+    if (!first) return;
+    key = lineKey(first);
+  }
+  state.open[path] = true;
+  editing = { file: path, key };
+  refresh([path]);
+}
+
+function toggleFocus() {
+  state.focus = !state.focus;
+  if (state.focus && !state.current) state.current = readingOrder().find((p) => !state.reviewed[p]) || readingOrder()[0];
+  save();
+  renderTop();
+  applyFocus();
+  if (state.focus && state.current) document.getElementById(fileId(state.current))?.scrollIntoView({ block: "start" });
+}
+
+function applyFocus() {
+  document.body.classList.toggle("focus", !!state.focus);
+  const ci = state.current != null ? chapterOf.get(state.current) : null;
+  guide.chapters.forEach((ch, i) => document.getElementById("ch-" + ch.id)?.classList.toggle("is-current", i === ci));
+  renderFocusBar();
+}
+
+function renderFocusBar() {
+  const bar = document.getElementById("focusbar");
+  if (!bar) return;
+  const ci = state.current != null ? chapterOf.get(state.current) : 0;
+  const ch = guide.chapters[ci] || guide.chapters[0];
+  bar.replaceChildren(
+    h("span", {}, "Focus · chapter ", h("b", {}, String((ci ?? 0) + 1)), ` of ${guide.chapters.length}: ${ch.title}`),
+    h("span", {}, h("kbd", {}, "j"), " ", h("kbd", {}, "k"), " move · ", h("kbd", {}, "x"), " done & next · ", h("kbd", {}, "f"), " exit"));
+}
+
+// Celebrate chapters and the whole PR as they get finished.
+function checkProgress() {
+  guide.chapters.forEach((ch, i) => {
+    const now = chapterDone(ch);
+    if (now && doneCache[i] === false) celebrateChapter(ch, i);
+    doneCache[i] = now;
+  });
+  const all = files.every((f) => state.reviewed[f.path]);
+  if (all && !state.celebrated) {
+    state.celebrated = true; save();
+    setTimeout(() => { confetti(); showReceipt(); }, 450);
+  }
+  if (!all && state.celebrated) { state.celebrated = false; save(); }
+}
+
+function celebrateChapter(ch, i) {
+  const sec = document.getElementById("ch-" + ch.id);
+  if (sec) {
+    sec.classList.remove("just-done"); void sec.offsetWidth; sec.classList.add("just-done");
+    setTimeout(() => sec.classList.remove("just-done"), 1600);
+    const check = sec.querySelector(".done-check");
+    if (check && !files.every((f) => state.reviewed[f.path])) burst(check);
+  }
+  const t = [...document.querySelectorAll("#toc a")].find((a) => a.getAttribute("href") === "#ch-" + ch.id);
+  if (t) { t.classList.add("just-done"); setTimeout(() => t.classList.remove("just-done"), 900); }
+  // In focus mode, carry on into the next chapter that still has work.
+  if (state.focus) {
+    const next = readingOrder().find((p) => !state.reviewed[p]);
+    if (next) setTimeout(() => { state.open[next] = true; refresh([next]); setCurrent(next); }, 700);
+  }
+}
+
+function doneCheck() {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("class", "done-check");
+  svg.innerHTML = '<circle cx="12" cy="12" r="12"/><path d="M7 12.5l3.2 3.2L17 9"/>';
+  return svg;
+}
+
+// ---------- confetti ----------
+const COLORS = () => ["--accent", "--add", "--warn", "--blocker", "--hl-function"].map((v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim() || "#7c80f5");
+function particles(canvas, list, ms) {
+  const ctx = canvas.getContext("2d");
+  const dpr = devicePixelRatio || 1;
+  canvas.width = innerWidth * dpr; canvas.height = innerHeight * dpr;
+  ctx.scale(dpr, dpr);
+  const start = performance.now();
+  (function frame(now) {
+    const t = now - start;
+    ctx.clearRect(0, 0, innerWidth, innerHeight);
+    for (const p of list) {
+      p.vy += 0.18; p.vx *= 0.99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, 1 - t / ms);
+      ctx.translate(p.x, p.y); ctx.rotate(p.r);
+      ctx.fillStyle = p.c;
+      ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+      ctx.restore();
+    }
+    if (t < ms) requestAnimationFrame(frame); else canvas.remove();
+  })(start);
+}
+function confetti() {
+  if (reduceMotion) return;
+  const canvas = h("canvas", { class: "confetti" });
+  document.body.append(canvas);
+  const colors = COLORS();
+  const list = [];
+  for (let i = 0; i < 170; i++) {
+    const fromLeft = i % 2 === 0;
+    list.push({ x: fromLeft ? -10 : innerWidth + 10, y: innerHeight * 0.65,
+      vx: (fromLeft ? 1 : -1) * (5 + Math.random() * 9), vy: -(9 + Math.random() * 9),
+      r: Math.random() * 6, vr: (Math.random() - 0.5) * 0.3, w: 6 + Math.random() * 6, h: 3 + Math.random() * 5,
+      c: colors[i % colors.length] });
+  }
+  particles(canvas, list, 2600);
+}
+function burst(el) {
+  if (reduceMotion) return;
+  const r = el.getBoundingClientRect();
+  const canvas = h("canvas", { class: "confetti" });
+  document.body.append(canvas);
+  const colors = COLORS();
+  const list = [];
+  for (let i = 0; i < 26; i++) {
+    const a = Math.random() * Math.PI * 2, sp = 2 + Math.random() * 4;
+    list.push({ x: r.left + r.width / 2, y: r.top + r.height / 2, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 2.5,
+      r: 0, vr: (Math.random() - 0.5) * 0.4, w: 4 + Math.random() * 3, h: 2 + Math.random() * 3, c: colors[i % colors.length] });
+  }
+  particles(canvas, list, 900);
+}
+
+// ---------- receipt ----------
+function closeModal() { document.querySelector(".overlay")?.remove(); }
+function modal(...kids) {
+  closeModal();
+  const ov = h("div", { class: "overlay", onclick: (e) => { if (e.target === ov) closeModal(); } }, h("div", { class: "modal" }, ...kids));
+  document.body.append(ov);
+  return ov;
+}
+function receiptStats() {
+  const reviewed = files.filter((f) => state.reviewed[f.path]);
+  const adds = reviewed.reduce((n, f) => n + f.additions, 0), dels = reviewed.reduce((n, f) => n + f.deletions, 0);
+  const caught = new Set(state.comments.filter((c) => c.findingId).map((c) => c.findingId)).size;
+  const sev = Object.fromEntries(SEVS.map((s) => [s, findings.filter((f) => f.severity === s).length]));
+  const est = guide.chapters.reduce((n, ch) => n + ch.files.reduce((m, p) => m + fileSeconds(p), 0), 0);
+  return { files: reviewed.length, chapters: guide.chapters.filter(chapterDone).length, adds, dels, caught, sev,
+    comments: state.comments.length, spent: state.spent, est };
+}
+function showReceipt() {
+  const s = receiptStats();
+  const took = s.spent >= 60 ? `${Math.round(s.spent / 60)} min` : s.spent ? `${s.spent} s` : "-";
+  const big = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  big.setAttribute("viewBox", "0 0 54 54"); big.setAttribute("class", "big");
+  big.innerHTML = '<circle cx="27" cy="27" r="27"/><path d="M16 28l7 7 15-15"/>';
+  const findingsLine = [s.sev.blocker && `${s.sev.blocker} blocker${s.sev.blocker > 1 ? "s" : ""}`, s.sev.warn && `${s.sev.warn} warning${s.sev.warn > 1 ? "s" : ""}`, s.sev.nit && `${s.sev.nit} nit${s.sev.nit > 1 ? "s" : ""}`].filter(Boolean).join(" · ") || "none";
+  const text = `Reviewed "${guide.title}": ${s.files} files in ${s.chapters} chapters (+${s.adds} −${s.dels}) in ${took}. ${s.comments} comment${s.comments === 1 ? "" : "s"}, findings: ${findingsLine}.`;
+  modal(
+    h("div", { class: "receipt" }, big,
+      h("h3", {}, PREV ? "Re-review done" : "PR reviewed"),
+      h("p", { class: "sub" }, guide.title),
+      h("div", { class: "stats" },
+        h("div", {}, h("b", {}, s.files), h("span", {}, `files in ${s.chapters} chapter${s.chapters === 1 ? "" : "s"}`)),
+        h("div", {}, h("b", {}, h("span", { style: "color:var(--add)" }, "+" + s.adds), " ", h("span", { style: "color:var(--del)" }, "−" + s.dels)), h("span", {}, "lines read")),
+        h("div", {}, h("b", {}, took), h("span", {}, `estimated ${fmtMin(s.est)}`)),
+        h("div", {}, h("b", {}, s.comments), h("span", {}, s.caught ? `comments · ${s.caught} from findings` : "comments for Claude"))),
+      h("p", { class: "sub", style: "margin-top:-6px" }, "Findings: " + findingsLine),
+      h("div", { class: "row" },
+        h("button", { class: "btn", onclick: () => copyText(text, "Copied summary") }, "Copy summary"),
+        h("button", { class: "btn", onclick: closeModal }, "Close"),
+        h("button", { class: "btn primary", onclick: () => { exportComments(); closeModal(); } },
+          s.comments ? `Send ${s.comments} comment${s.comments === 1 ? "" : "s"} to Claude` : "Export review state"))));
+}
+
+function showHelp() {
+  const keys = [["j / k", "Next / previous file"], ["o or Enter", "Open or close the file"], ["x", "Mark reviewed and open the next one"],
+    ["click a line, then c", "Comment on that line"], ["n / N", "Next / previous finding"], ["t", "Walk me through this chapter"],
+    ["f", "Focus on one chapter"], ["e", "Export for Claude"], ["Esc", "Close"]];
+  modal(h("h3", {}, "Keyboard shortcuts"), h("p", { class: "sub" }, "Review without touching the mouse."),
+    h("div", { class: "keys" }, keys.flatMap(([k, d]) => [h("kbd", {}, k), h("span", {}, d)])),
+    h("div", { class: "row" }, h("button", { class: "btn", onclick: closeModal }, "Close")));
+}
+
+function copyText(text, msg) {
+  const done = () => toast(msg);
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done, () => fallbackCopy(text, done));
+  else fallbackCopy(text, done);
+}
+
+let findingCursor = -1;
+function stepFinding(delta) {
+  const order = new Map(guide.chapters.flatMap((ch) => ch.files).map((p, i) => [p, i]));
+  const list = findings.slice().sort((a, b) => (order.get(a.file) - order.get(b.file)) || (a.line - b.line));
+  if (!list.length) return;
+  findingCursor = (findingCursor + delta + list.length) % list.length;
+  const f = list[findingCursor];
+  reveal(f.file, f.pinned ? null : f.line, "fd-" + f.id);
+}
+
+addEventListener("keydown", (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.target.closest && e.target.closest("textarea, input, select, [contenteditable]")) return;
+  if (tour) {
+    if (e.key === "ArrowRight" || e.key === " " || e.key === "l") { e.preventDefault(); tourStep(1); return; }
+    if (e.key === "ArrowLeft" || e.key === "h") { e.preventDefault(); tourStep(-1); return; }
+    if (e.key === "Escape") { endTour(); return; }
+  }
+  if (e.key === "Escape") { closeModal(); if (editing) { const f = editing.file; editing = null; refresh([f]); } return; }
+  if (document.querySelector(".overlay")) return;
+  const cur = state.current;
+  switch (e.key) {
+    case "j": move(1); break;
+    case "k": move(-1); break;
+    case "o": case "Enter":
+      if (cur) { state.open[cur] = !state.open[cur]; save(); refresh([cur]); } else move(0);
+      break;
+    case "x":
+      if (!cur) { move(0); break; }
+      if (state.reviewed[cur]) setReviewed(cur, false, true); else markAndAdvance(cur);
+      break;
+    case "c": e.preventDefault(); commentOnCurrent(); break;
+    case "n": stepFinding(1); break;
+    case "N": stepFinding(-1); break;
+    case "e": exportComments(); break;
+    case "f": toggleFocus(); break;
+    case "t": {
+      const ci = cur != null ? chapterOf.get(cur) : guide.chapters.findIndex((ch) => ch.tour && ch.tour.length);
+      const i = guide.chapters[ci] && guide.chapters[ci].tour && guide.chapters[ci].tour.length ? ci : guide.chapters.findIndex((ch) => ch.tour && ch.tour.length);
+      if (i >= 0) startTour(i); else toast("No walkthrough for this PR");
+      break;
+    }
+    case "?": showHelp(); break;
+    default: return;
+  }
+});
+
+// ---------- guided tour ----------
+let tour = null; // { ch, step }
+function startTour(ci) {
+  tour = { ch: ci, step: 0 };
+  closeModal();
+  showTourStep();
+}
+function endTour() {
+  tour = null;
+  document.getElementById("tour")?.remove();
+  document.querySelectorAll("tr.tour-hl").forEach((r) => r.classList.remove("tour-hl"));
+}
+function tourStep(delta) {
+  const ch = guide.chapters[tour.ch];
+  const next = tour.step + delta;
+  if (next < 0) return;
+  if (next >= ch.tour.length) { endTour(); return; }
+  tour.step = next;
+  showTourStep();
+}
+function showTourStep() {
+  const ci = tour.ch, ch = guide.chapters[ci], stop = ch.tour[tour.step];
+  const last = tour.step === ch.tour.length - 1;
+  reveal.quiet = true;
+  reveal(stop.file, stop.offDiff ? null : stop.line);
+  reveal.quiet = false;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.querySelectorAll("tr.tour-hl").forEach((r) => r.classList.remove("tour-hl"));
+    if (stop.offDiff) return;
+    const card = document.getElementById(fileId(stop.file));
+    const end = Math.max(stop.line, stop.end_line || stop.line);
+    for (let n = stop.line; n <= end; n++) card?.querySelector(`tr[data-key="n${n}"]`)?.classList.add("tour-hl");
+    // Keep the highlighted lines clear of the panel.
+    const row = card?.querySelector(`tr[data-key="n${stop.line}"]`);
+    if (row) {
+      const panelTop = innerHeight - (document.getElementById("tour")?.offsetHeight || 200) - 40;
+      const rb = row.getBoundingClientRect();
+      const want = Math.min(innerHeight * 0.3, panelTop - (end - stop.line + 1) * 21 - 20);
+      scrollBy({ top: rb.top - Math.max(110, want), behavior: reduceMotion ? "auto" : "smooth" });
+    }
+  }));
+  const allDone = chapterDone(ch);
+  const panel = h("div", { class: "tour", id: "tour", role: "dialog", "aria-label": "Walkthrough" },
+    h("div", { class: "th" },
+      h("span", {}, "Walkthrough · ", h("b", { style: "color:var(--text)" }, ch.title)),
+      h("span", { class: "spacer" }),
+      h("span", { class: "steps" }, ch.tour.map((_, i) => h("i", { class: i <= tour.step ? "on" : "" }))),
+      h("span", {}, `${tour.step + 1} / ${ch.tour.length}`)),
+    h("p", { class: "note" }, rich(stop.note)),
+    h("div", { class: "where" }, `${stop.file}:${stop.line}${stop.end_line && stop.end_line > stop.line ? "-" + stop.end_line : ""}`),
+    h("div", { class: "tf" },
+      h("button", { class: "btn small", onclick: endTour }, "Close ", h("kbd", {}, "esc")),
+      h("span", { class: "spacer" }),
+      tour.step > 0 ? h("button", { class: "btn small", onclick: () => tourStep(-1) }, "← Back") : null,
+      last
+        ? (allDone ? h("button", { class: "btn small primary", onclick: endTour }, "Done")
+          : h("button", { class: "btn small primary", onclick: () => {
+              endTour();
+              for (const p of ch.files) state.reviewed[p] = true, (state.open[p] = false);
+              save(); refresh(ch.files);
+            } }, "Mark chapter reviewed ✓"))
+        : h("button", { class: "btn small primary", onclick: () => tourStep(1) }, "Next →  ", h("kbd", {}, "space"))));
+  const old = document.getElementById("tour");
+  if (old) old.replaceWith(panel); else document.body.append(panel);
+}
+
+// ---------- boot ----------
+function renderAll() {
+  const y = window.scrollY;
+  const app = document.getElementById("app");
+  app.replaceChildren(renderIntro(), ...guide.chapters.map((ch, i) => (visibleFiles(ch).length ? renderChapter(ch, i) : null)).filter(Boolean));
+  renderTop();
+  renderToc();
+  applyFocus();
+  doneCache = guide.chapters.map(chapterDone);
+  window.scrollTo(0, y);
+}
+document.getElementById("foot").textContent =
+  `${guide.chapters.length} chapters · ${files.length} files · generated ${new Date(meta.generated).toLocaleString()} · review state is saved in this browser · press ? for shortcuts`;
+renderAll();
+</script>
+</body>
+</html>
