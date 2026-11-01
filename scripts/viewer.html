@@ -829,7 +829,7 @@ function reveal(path, line, targetId) {
 // ---------- export ----------
 // Copies a markdown block for the coding agent: your comments, plus a machine-readable
 // record of exactly which version of each file you reviewed. The agent saves that
-// record so the next /pr-review only shows what changed since.
+// record so the next review only shows what changed since.
 function exportComments() {
   const order = new Map(guide.chapters.flatMap((ch) => ch.files).map((p, i) => [p, i])); // reading order
   const sorted = state.comments.slice().sort((a, b) =>
@@ -855,10 +855,10 @@ function exportComments() {
     })),
   };
 
-  const lines = ["<!-- pr-review-comments -->", `## Review comments: ${guide.title}`, "",
+  const lines = ["<!-- second-look-comments -->", `## Review comments: ${guide.title}`, "",
     sorted.length
-      ? `Base \`${meta.base}\` ← \`${meta.head}\`. Save the review state below (see the pr-review skill), then address each comment and list what you changed.`
-      : `No comments. I reviewed ${Object.keys(reviewed).length} file(s). Save the review state below (see the pr-review skill) so the next review only shows what changes.`,
+      ? `Base \`${meta.base}\` ← \`${meta.head}\`. Save the review state below (see the Second Look Code Review skill), then address each comment and list what you changed.`
+      : `No comments. I reviewed ${Object.keys(reviewed).length} file(s). Save the review state below (see the Second Look Code Review skill) so the next review only shows what changes.`,
     ""];
   sorted.forEach((c, i) => {
     const f = fileByPath.get(c.file);
@@ -869,7 +869,7 @@ function exportComments() {
     for (const t of c.text.split("\n")) lines.push("   " + t);
     lines.push("");
   });
-  lines.push("<!-- pr-review-state", JSON.stringify(record, null, 2).replace(/-->/g, "--\\u003e"), "-->");
+  lines.push("<!-- second-look-state", JSON.stringify(record, null, 2).replace(/-->/g, "--\\u003e"), "-->");
 
   const md = lines.join("\n");
   const done = () => toast(sorted.length

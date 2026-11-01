@@ -2,10 +2,10 @@
 // Renders a PR review guide (guide.json) plus the real git diff into one
 // self-contained, interactive HTML page. Node 18+, no dependencies.
 //
-//   node render.mjs --guide .pr-review/guide.json [--base main] [--head <ref>]
-//                   [--previous .pr-review/last-review.json] [--working-tree]
-//                   [--out .pr-review/review.html] [--open]
-//   node render.mjs --status --previous .pr-review/last-review.json [--base main]
+//   node render.mjs --guide .second-look/guide.json [--base main] [--head <ref>]
+//                   [--previous .second-look/last-review.json] [--working-tree]
+//                   [--out .second-look/review.html] [--open]
+//   node render.mjs --status --previous .second-look/last-review.json [--base main]
 //     prints which files changed since the last review, as JSON, and exits.
 
 import { execFileSync, spawn } from "node:child_process";
@@ -256,7 +256,7 @@ function collect(args) {
 const DIFF = ["diff", "--no-color", "--no-ext-diff", "-M", "-U3"];
 
 function withUntracked(files) {
-  const untracked = tryGit(["ls-files", "--others", "--exclude-standard"]).split("\n").filter((p) => p && !p.startsWith(".pr-review/"));
+  const untracked = tryGit(["ls-files", "--others", "--exclude-standard"]).split("\n").filter((p) => p && !p.startsWith(".second-look/"));
   for (const p of untracked) {
     let out = "";
     try {
@@ -384,8 +384,8 @@ function main() {
       base,
       head: label,
       sha,
-      dirty: live && !!tryGit(["status", "--porcelain", "--untracked-files=normal", "--", ".", ":!.pr-review"]),
-      key: `pr-review:${fingerprint}`,
+      dirty: live && !!tryGit(["status", "--porcelain", "--untracked-files=normal", "--", ".", ":!.second-look"]),
+      key: `second-look:${fingerprint}`,
       generated: new Date().toISOString(),
       warnings,
     },

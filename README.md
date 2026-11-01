@@ -1,4 +1,4 @@
-# pr-review
+# Second Look Code Review
 
 An [Agent Skill](https://agentskills.io) that turns a branch or pull request into an interactive code review guide in your browser. Works with Claude Code, Codex, Cursor, GitHub Copilot, Gemini CLI, OpenCode, Windsurf and other coding agents that support skills.
 
@@ -22,7 +22,7 @@ The agent only writes a small `guide.json`. A fixed, zero-dependency script rend
 ### Any agent, with one command (recommended)
 
 ```bash
-npx skills add gostak-dd/pr-review -g
+npx skills add gostak-dd/second-look-code-review -g
 ```
 
 This uses the open [`skills`](https://github.com/vercel-labs/skills) installer. It asks which agents you use and installs the skill for each of them. `-g` installs it for all your projects; leave it out to install into the current project only.
@@ -30,17 +30,17 @@ This uses the open [`skills`](https://github.com/vercel-labs/skills) installer. 
 To pick agents up front, pass `-a`:
 
 ```bash
-npx skills add gostak-dd/pr-review -g -a claude-code codex cursor
+npx skills add gostak-dd/second-look-code-review -g -a claude-code codex cursor
 ```
 
-Update with `npx skills update pr-review`, remove with `npx skills remove pr-review`.
+Update with `npx skills update second-look-code-review`, remove with `npx skills remove second-look-code-review`.
 
 ### Manual install
 
 Clone the repo into your agent's skills folder:
 
 ```bash
-git clone https://github.com/gostak-dd/pr-review.git <skills-folder>/pr-review
+git clone https://github.com/gostak-dd/second-look-code-review.git <skills-folder>/second-look-code-review
 ```
 
 | Agent | For all projects | For one project |
@@ -57,17 +57,17 @@ git clone https://github.com/gostak-dd/pr-review.git <skills-folder>/pr-review
 Paths move as agents update; the [`skills` agent list](https://github.com/vercel-labs/skills/blob/main/docs/agents.md) has the current ones for 80+ agents. For example, for Claude Code on every project:
 
 ```bash
-git clone https://github.com/gostak-dd/pr-review.git ~/.claude/skills/pr-review
+git clone https://github.com/gostak-dd/second-look-code-review.git ~/.claude/skills/second-look-code-review
 ```
 
-Update with `git -C <skills-folder>/pr-review pull`.
+Update with `git -C <skills-folder>/second-look-code-review pull`.
 
 ### After installing
 
 Restart your agent (or start a new session) so it picks up the skill, then add the folder the skill writes its output to into your project's `.gitignore`:
 
 ```bash
-echo ".pr-review/" >> .gitignore
+echo ".second-look/" >> .gitignore
 ```
 
 ## Use
@@ -77,9 +77,9 @@ echo ".pr-review/" >> .gitignore
 
    > Review this branch against main
 
-   In agents that turn skills into slash commands, such as Claude Code, you can also type `/pr-review`.
+   In agents that turn skills into slash commands, such as Claude Code, you can also type `/second-look-code-review`.
 
-3. The agent reads the diff, groups it into chapters, runs the checklist, and opens `.pr-review/review.html` in your browser.
+3. The agent reads the diff, groups it into chapters, runs the checklist, and opens `.second-look/review.html` in your browser.
 
 The review covers everything on the branch since it left the base branch, including uncommitted and untracked files. The base is the one you name, otherwise the PR's base, otherwise the repo's default branch.
 
@@ -106,8 +106,8 @@ Each chapter also lists the questions worth asking about it and how to try it by
 
 ## The review loop
 
-1. Mark files reviewed, comment on lines, then click **Export for AI**. It copies a block starting with `<!-- pr-review-comments -->`.
-2. Paste it into your agent. It saves which version of each file you reviewed to `.pr-review/last-review.json`, fixes each comment (or explains why not), and records what it did.
+1. Mark files reviewed, comment on lines, then click **Export for AI**. It copies a block starting with `<!-- second-look-comments -->`.
+2. Paste it into your agent. It saves which version of each file you reviewed to `.second-look/last-review.json`, fixes each comment (or explains why not), and records what it did.
 3. Ask for a review again. Files you already reviewed that haven't changed are hidden. Updated files open on just the changes since your review, with a toggle to the full PR diff, and your earlier comments are shown with how each one was resolved.
 
 This works whether or not anything was committed in between.
@@ -131,7 +131,7 @@ This works whether or not anything was committed in between.
 If you already have a `guide.json`:
 
 ```bash
-node ~/.claude/skills/pr-review/scripts/render.mjs --guide .pr-review/guide.json --base main --open
+node ~/.claude/skills/second-look-code-review/scripts/render.mjs --guide .second-look/guide.json --base main --open
 ```
 
 | Flag | Meaning |
@@ -142,7 +142,7 @@ node ~/.claude/skills/pr-review/scripts/render.mjs --guide .pr-review/guide.json
 | `--working-tree` | Review only uncommitted changes against `HEAD` |
 | `--previous <file>` | Last review state, for a re-review |
 | `--status` | With `--previous`, print which files changed since the last review as JSON |
-| `--out <file>` | Output path (default `.pr-review/review.html`) |
+| `--out <file>` | Output path (default `.second-look/review.html`) |
 | `--open` | Open the page in your browser |
 
 The renderer checks the guide against the real diff and warns about files missing from every chapter or findings on lines that aren't in the diff.

@@ -1,9 +1,9 @@
 ---
-name: pr-review
-description: Turn the current branch or PR into an interactive review guide, with changes grouped into feature chapters, ranked by risk, checked against an AI-code checklist, opened as a browser view. On later runs, shows only what changed since the last review. Use when the user asks to review a PR, review a branch, review changes before merging, re-review, or runs /pr-review. Also use when the user pastes a block starting with <!-- pr-review-comments -->.
+name: second-look-code-review
+description: Turn the current branch or PR into an interactive review guide, with changes grouped into feature chapters, ranked by risk, checked against an AI-code checklist, opened as a browser view. On later runs, shows only what changed since the last review. Use when the user asks to review a PR, review a branch, review changes before merging, re-review, or runs /second-look-code-review. Also use when the user pastes a block starting with <!-- second-look-comments -->.
 ---
 
-# PR Review
+# Second Look Code Review
 
 You produce a **review guide** for a set of changes, and a bundled script renders it as an interactive page. You never write the UI yourself: you write `guide.json`, the script does the rest. Keep it that way, so the view looks the same every run and costs no tokens to draw.
 
@@ -14,10 +14,10 @@ Files in this skill (paths are relative to the folder containing this SKILL.md):
 
 ## 0. First review or re-review?
 
-If `.pr-review/last-review.json` exists, this is a **re-review**. Run:
+If `.second-look/last-review.json` exists, this is a **re-review**. Run:
 
 ```bash
-node <this-skill-folder>/scripts/render.mjs --status --previous .pr-review/last-review.json --base <base>
+node <this-skill-folder>/scripts/render.mjs --status --previous .second-look/last-review.json --base <base>
 ```
 
 It prints JSON: every changed file marked `updated` (reviewed before, changed since, with the exact `git diff` command for just those changes), `new` (never reviewed), or `unchanged` (reviewed, same content). If nothing is `updated` or `new`, tell the user nothing changed since their last review and stop, unless they ask for the full view. Otherwise follow **Re-review** below instead of steps 1-5.
@@ -84,13 +84,13 @@ Severity:
 
 ## 6. Write and render
 
-Write the guide to `.pr-review/guide.json` in the repo root, matching `schema.json`. Then run:
+Write the guide to `.second-look/guide.json` in the repo root, matching `schema.json`. Then run:
 
 ```bash
-node <this-skill-folder>/scripts/render.mjs --guide .pr-review/guide.json --base <base> --open
+node <this-skill-folder>/scripts/render.mjs --guide .second-look/guide.json --base <base> --open
 ```
 
-Add `--previous .pr-review/last-review.json` on a re-review. The script reads the real diff from git, checks the guide against it, writes `.pr-review/review.html` and opens it. If it prints warnings (missing files, findings on lines not in the diff), fix `guide.json` and run it again. Suggest adding `.pr-review/` to `.gitignore` the first time.
+Add `--previous .second-look/last-review.json` on a re-review. The script reads the real diff from git, checks the guide against it, writes `.second-look/review.html` and opens it. If it prints warnings (missing files, findings on lines not in the diff), fix `guide.json` and run it again. Suggest adding `.second-look/` to `.gitignore` the first time.
 
 ## 7. Reply
 
@@ -100,22 +100,22 @@ Keep it short: the intent sentence, how many chapters, and the blockers if any, 
 
 The goal is to show the reviewer only what changed since they last looked, and to spend tokens only on that.
 
-1. **Reuse `.pr-review/guide.json`.** Keep the intent, chapter ids, titles and order.
+1. **Reuse `.second-look/guide.json`.** Keep the intent, chapter ids, titles and order.
 2. **Read only what changed.** For `updated` files, run the `diff_since_review` command from the status output. For `new` files, read the full diff. Don't re-read `unchanged` files.
 3. **Place new files** in the chapter they belong to, or a new chapter. Drop files that are no longer in the diff.
 4. **Update summaries** only for chapters with `updated` or `new` files: keep the summary and add one sentence starting "Since your review:" describing what changed. Rewrite those chapters' `tour` to walk through what changed (line numbers have moved), and update `checks` and `test` if they no longer apply.
 5. **Findings:** keep findings on `unchanged` files as they are. Remove findings on `updated` files, and run the checklist again on their since-review diff and on `new` files. Line numbers are the file's current line numbers.
-6. Render with `--previous .pr-review/last-review.json`. The view hides unchanged files you already reviewed, shows updated files as "since your review" diffs (with a toggle to the full PR diff), and shows earlier comments with how you resolved them.
+6. Render with `--previous .second-look/last-review.json`. The view hides unchanged files you already reviewed, shows updated files as "since your review" diffs (with a toggle to the full PR diff), and shows earlier comments with how you resolved them.
 7. Reply in two or three lines: how many files changed since the last review, and any earlier comment marked `question` that needs the reviewer's answer.
 
 ## Addressing review comments
 
-The view's **Export for AI** button copies a block that starts with `<!-- pr-review-comments -->`: the reviewer's comments, then a `<!-- pr-review-state … -->` block recording which version of each file they reviewed. When the user pastes it:
+The view's **Export for AI** button copies a block that starts with `<!-- second-look-comments -->`: the reviewer's comments, then a `<!-- second-look-state … -->` block recording which version of each file they reviewed. When the user pastes it:
 
-1. **Save the state first, before changing any code.** Copy the JSON between `<!-- pr-review-state` and `-->` exactly into `.pr-review/last-review.json`, replacing any earlier one. It records the versions the reviewer saw, so it must be saved as is.
+1. **Save the state first, before changing any code.** Copy the JSON between `<!-- second-look-state` and `-->` exactly into `.second-look/last-review.json`, replacing any earlier one. It records the versions the reviewer saw, so it must be saved as is.
 2. Treat each comment as a review request on its file and line. Lines are the file's line numbers at the time of the review (`side: "old"` means a deleted line).
 3. Fix each one, or explain why not if a fix would be wrong.
-4. **Record what you did** by adding a `resolution` to each comment in `.pr-review/last-review.json`:
+4. **Record what you did** by adding a `resolution` to each comment in `.second-look/last-review.json`:
    ```json
    "resolution": { "status": "fixed", "note": "Removed fileIds; ownership now checked in listReadyFiles (launch.ts:9)" }
    ```
